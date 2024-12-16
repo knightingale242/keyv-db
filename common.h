@@ -7,6 +7,7 @@
 
 // Maximum message length
 inline constexpr size_t k_max_msg = 4096;
+inline constexpr size_t k_max_args = 1024;
 
 // Utility functions for error handling and logging
 void msg(const char* message);
