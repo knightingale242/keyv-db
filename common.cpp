@@ -6,9 +6,6 @@
 #include <cstring>
 #include <cstdlib>
 
-// Maximum message length
-const size_t k_max_msg = 4096;
-
 // Error logging and handling functions
 void msg(const char* message) {
     fprintf(stderr, "%s\n", message);

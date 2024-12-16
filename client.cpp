@@ -8,25 +8,30 @@
 #include <cerrno>
 #include "common.h"
 
-static int32_t query(int fd, const char* text) {
+static int32_t send_req(int fd, const char* text) {
     uint32_t len = (uint32_t)strlen(text);
     if (len > k_max_msg) {
-        return -1;
+        return -1; // Message too long
     }
 
-    // Send request
+    // Prepare the write buffer
     char wbuf[4 + len];
     memcpy(wbuf, &len, 4);
     memcpy(&wbuf[4], text, len);
-    int32_t err = write_full(fd, wbuf, 4 + len);
-    if (err) {
-        return err;
-    }
 
-    // Reading
+    // Send request
+    int32_t err = write_full(fd, wbuf, 4 + len);
+    return err; // Return 0 on success, or an error code
+}
+
+
+static int32_t read_res(int fd) {
+    uint32_t len;
     char rbuf[4 + k_max_msg + 1];
+
+    // Read the length of the response
     errno = 0;
-    err = read_full(fd, rbuf, 4);
+    int32_t err = read_full(fd, rbuf, 4);
     if (err) {
         if (errno == 0) {
             msg("EOF");
@@ -35,13 +40,14 @@ static int32_t query(int fd, const char* text) {
         }
         return err;
     }
+
     memcpy(&len, rbuf, 4);
     if (len > k_max_msg) {
         msg("This message is too long");
-        return -1;
+        return -1; // Message length invalid
     }
-    
-    // Read the message
+
+    // Read the actual message
     err = read_full(fd, &rbuf[4], len);
     if (err) {
         msg("read() error");
@@ -49,7 +55,8 @@ static int32_t query(int fd, const char* text) {
     }
     rbuf[4 + len] = '\0';
     printf("server says: %s\n", &rbuf[4]);
-    return 0;
+
+    return 0; // Success
 }
 
 int main() {
@@ -67,18 +74,19 @@ int main() {
         return -1;
     }
 
-    //send multiple requests
-    int32_t err = query(fd, "hello1");
-    if (err){
-        goto L_DONE;
+    //multiple pipelined reqs
+    const char* query_list[3] = {"hello1", "hello2", "hello3"};
+    for(size_t i = 0; i < 3; i++){
+        int32_t err = send_req(fd, query_list[i]);
+        if(err){
+            goto L_DONE;
+        }
     }
-    err = query(fd, "hello2");
-    if(err){
-        goto L_DONE;
-    }
-    err = query(fd, "hello3");
-    if(err){
-        goto L_DONE;
+    for (size_t i = 0; i < 3; i++){
+        int32_t err = read_res(fd);
+        if(err){
+            goto L_DONE;
+        }
     }
 L_DONE:
     close(fd);

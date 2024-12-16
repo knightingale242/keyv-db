@@ -6,7 +6,7 @@
 #include <cstdio>  // For FILE* and fprintf
 
 // Maximum message length
-extern const size_t k_max_msg;
+inline constexpr size_t k_max_msg = 4096;
 
 // Utility functions for error handling and logging
 void msg(const char* message);
