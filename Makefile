@@ -1,29 +1,33 @@
-# Compiler settings
 CXX = g++
 CXXFLAGS = -Wall -Wextra -O2
 
-# Source files
-SERVER_SRC = server.cpp
-CLIENT_SRC = client.cpp
+# Object files
+OBJS = common.o client.o server.o
 
-# Executable names
-SERVER_EXE = server
-CLIENT_EXE = client
+# Executables
+TARGETS = client server
 
-# Default target
-all: $(SERVER_EXE) $(CLIENT_EXE)
+all: $(TARGETS)
 
-# Compile the server executable
-$(SERVER_EXE): $(SERVER_SRC)
-	$(CXX) $(CXXFLAGS) $(SERVER_SRC) -o $(SERVER_EXE)
+# Linking the client and server
+client: client.o common.o
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
-# Compile the client executable
-$(CLIENT_EXE): $(CLIENT_SRC)
-	$(CXX) $(CXXFLAGS) $(CLIENT_SRC) -o $(CLIENT_EXE)
+server: server.o common.o
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
-# Clean up the generated files
+# Compiling source files
+client.o: client.cpp common.h
+	$(CXX) $(CXXFLAGS) -c $<
+
+server.o: server.cpp common.h
+	$(CXX) $(CXXFLAGS) -c $<
+
+common.o: common.cpp common.h
+	$(CXX) $(CXXFLAGS) -c $<
+
+# Clean up
 clean:
-	rm -f $(SERVER_EXE) $(CLIENT_EXE)
+	rm -f $(TARGETS) $(OBJS)
 
-# Phony targets
 .PHONY: all clean
